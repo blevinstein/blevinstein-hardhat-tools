@@ -1,6 +1,14 @@
 require("@nomiclabs/hardhat-etherscan");
 require("@openzeppelin/hardhat-upgrades");
 
+function bigIntReviver(key, value) {
+  return typeof value == 'number' ? BigInt(value) : value;
+}
+
+function bigIntReplacer(key, value) {
+  return typeof value == 'bigint' ? parseInt(value) : value;
+}
+
 task('get-impl', 'Prints the proxy and impl addresses')
     .addParam('address')
     .setAction(async (args, hre) => {
