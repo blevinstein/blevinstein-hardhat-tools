@@ -1,6 +1,6 @@
 {
   "name": "blevinstein-hardhat-tools",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Useful hardhat tasks for managing contracts.",
   "main": "index.js",
   "author": "Brian Levinstein",

@@ -1,6 +1,13 @@
 require("@nomiclabs/hardhat-etherscan");
 require("@openzeppelin/hardhat-upgrades");
 
+async function getImplAddress(proxyAddress) {
+  const implHex = await ethers.provider.getStorageAt(
+      proxyAddress,
+      "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc");
+  return ethers.utils.hexStripZeros(implHex);
+}
+
 function bigIntReviver(key, value) {
   return typeof value == 'number' ? BigInt(value) : value;
 }
