@@ -190,7 +190,7 @@ task('transfer-ownership', 'Transfers ownership of a contract, or renounces owne
     .setAction(async (args, hre) => {
   console.log(`Using network ${hre.network.name}`);
   const contract = await hre.ethers.getContractAt(
-      upgradeable ? 'OwnableUpgradeable' : 'Ownable',
+      args.upgradeable ? 'OwnableUpgradeable' : 'Ownable',
       args.address);
 
   if (args.renounce) {
