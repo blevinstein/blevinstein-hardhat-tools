@@ -1,6 +1,6 @@
 {
   "name": "blevinstein-hardhat-tools",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Useful hardhat tasks for managing contracts.",
   "repository": "github:blevinstein/blevinstein-hardhat-tools",
   "main": "index.js",

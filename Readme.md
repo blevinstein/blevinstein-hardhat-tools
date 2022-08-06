@@ -25,8 +25,4 @@ require('blevinstein-hardhat-tools');
 - call: Calls a method on a deployed contract.
 - deploy: Deploys a new contract, or upgrades the implementation of an already deployed upgradeable contract.
 - grant: Grants or revokes a role on an AccessControl contract.
-
-## TODO
-
-- transferOwnership
-- revokeOwnership
+- transfer-ownership: Transfers or renounces ownership of an Ownable contract.

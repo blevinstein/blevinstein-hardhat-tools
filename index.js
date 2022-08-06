@@ -59,11 +59,11 @@ task('call', 'Calls a contract function')
     .addParam('method', 'Name of the method to call')
     .addOptionalParam('params', 'JSON arguments to method', '[]')
     .setAction(async (args, hre) => {
-  const Contract = await hre.ethers.getContractFactory(args.contract);
-  const contract = Contract.attach(args.address);
+  const contract = await hre.ethers.getContractAt(args.contract, args.address);
   const params = JSON.parse(args.params, bigIntReviver);
 
-  console.log(`Calling method ${args.method} on ${args.contract} at ${args.address} with params:\n${params.map(p => JSON.stringify(p, bigIntReplacer)).join('\n')}`);
+  console.log(`Calling method ${args.method} on ${args.contract} at ${args.address} with params:\n`
+      + `${params.map(p => JSON.stringify(p, bigIntReplacer)).join('\n')}`);
   const result = await contract[args.method](...params);
   console.log(`Result: ${JSON.stringify(result)}`);
 });
@@ -143,39 +143,71 @@ task('deploy', 'Deploys and upgrades contracts')
  *
  * # Grant a role to a user.
  * npx hardhat grant \
- *     --contract 0x11CED8aA8d02848429aF8dae3eC9F0796ba2db91 \
+ *     --address 0x11CED8aA8d02848429aF8dae3eC9F0796ba2db91 \
  *     --role AUTHORIZER \
  *     --actor 0xB4ce9cb1788dCd15969Ba01573516F6fBf7dA51c \
  *     --network localhost
  *
  * # Revoke a previously granted role.
  * npx hardhat grant \
- *     --contract 0x11CED8aA8d02848429aF8dae3eC9F0796ba2db91 \
+ *     --address 0x11CED8aA8d02848429aF8dae3eC9F0796ba2db91 \
  *     --role AUTHORIZER \
  *     --actor 0xB4ce9cb1788dCd15969Ba01573516F6fBf7dA51c \
  *     --network localhost \
  *     --revoke
  */
 task('grant', 'Grants or revokes a role')
-    .addParam('contract', 'Address of the contract to grant access to')
+    .addParam('address', 'Address of the contract to grant access to')
     .addFlag('revoke', 'Flag to revoke instead of granting a role')
     .addParam('actor', 'Address of the actor to grant or revoke access')
     .addParam('role', 'String to keccak256 to get the role identifier')
+    .addFlag('upgradeable', 'Indicates the contract is upgradeable')
     .setAction(async (args, hre) => {
   console.log(`Using network ${hre.network.name}`);
-  const contract = await hre.ethers.getContractAt('AccessControlUpgradeable', args.contract);
+  const contract = await hre.ethers.getContractAt(
+      args.upgradeable ? 'AccessControlUpgradeable' : 'AccessControl',
+      args.address);
 
   const roleId = hre.ethers.utils.id(args.role);
   if (args.revoke) {
     const tx = await contract.revokeRole(roleId, args.actor);
     console.log(
         `Revoke role ${args.role} (${roleId}) from address ${args.actor} ` +
-        `(for contract ${args.contract}), txn=${tx.hash}`);
+        `(for contract at ${args.address}), txn=${tx.hash}`);
   } else {
     const tx = await contract.grantRole(roleId, args.actor);
     console.log(
         `Grant role ${args.role} (${roleId}) to address ${args.actor} ` +
-        `(for contract ${args.contract}), txn=${tx.hash}`);
+        `(for contract at ${args.address}), txn=${tx.hash}`);
+  }
+});
+
+task('transfer-ownership', 'Transfers ownership of a contract, or renounces ownership')
+    .addParam('address', 'Address of the contract to grant access to')
+    .addFlag('renounce', 'Flag to renounce instead of transferring ownership')
+    .addFlag('upgradeable', 'Indicates the contract is upgradeable')
+    .addOptionalParam('newOwner', 'Address that will receive ownership')
+    .setAction(async (args, hre) => {
+  console.log(`Using network ${hre.network.name}`);
+  const contract = await hre.ethers.getContractAt(
+      upgradeable ? 'OwnableUpgradeable' : 'Ownable',
+      args.address);
+
+  if (args.renounce) {
+    if (args.newOwner) {
+      throw new Error('Cannot provide newOwner when revoking ownership.');
+    }
+
+    const tx = await contract.renounceOwnership();
+    console.log(`Renounced ownership of contract at ${args.address}, txn=${tx.hash}`);
+  } else {
+    if (!args.newOwner) {
+      throw new Error('Must provide newOwner when transferring ownership.');
+    }
+
+    const tx = await contract.transferOwnership(args.newOwner);
+    console.log(
+        `Transferred ownership of contract at ${args.address} to ${args.newOwner}, txn=${tx.hash}`);
   }
 });
 
