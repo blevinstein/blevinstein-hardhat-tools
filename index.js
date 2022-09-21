@@ -211,3 +211,21 @@ task('transfer-ownership', 'Transfers ownership of a contract, or renounces owne
   }
 });
 
+task('sign-message', 'Generates a simple message signature')
+    .addOptionalParam('mnemonic', 'Mnemonic to sign with')
+    .addOptionalParam('privateKey', 'Private key to sign with')
+    .addParam('message', 'Message to sign')
+    .setAction(async (args, hre) => {
+  console.log(`Using network ${hre.network.name}`);
+
+  if (!args.mnemonic && !args.privateKey) {
+    throw new Error('Must provide mnemonic or privateKey');
+  }
+
+  const wallet = args.mnemonic
+      ? ethers.Wallet.fromMnemonic(args.mnemonic)
+      : new ethers.Wallet(args.privateKey);
+
+  console.log(await wallet.signMessage(args.message));
+});
+
