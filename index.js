@@ -1,5 +1,24 @@
-require("@nomiclabs/hardhat-etherscan");
+
 require("@openzeppelin/hardhat-upgrades");
+
+const Readline = require('readline');
+
+const readline = Readline.createInterface({input: process.stdin, output: process.stdout});
+
+function askQuestion(message) {
+  return new Promise((resolve, reject) => {
+    readline.question(message, answer => {
+      readline.close();
+      resolve(answer);
+    });
+  });
+};
+
+async function confirm(message) {
+  if ((await askQuestion(message)).toLowerCase() != 'y') {
+    throw new Error('Execution aborted by user');
+  }
+}
 
 async function getImplAddress(proxyAddress) {
   const implHex = await ethers.provider.getStorageAt(
@@ -96,6 +115,7 @@ task('deploy', 'Deploys and upgrades contracts')
     .addParam('contract', 'Name of the contract to deploy')
     .addFlag('upgradeable', 'Flag to indicate the contract is not upgradeable')
     .addFlag('verify', 'Flag to indicate etherscan verification should be performed')
+    .addFlag('ask', 'Flag to check with user before running command')
     .addOptionalParam('address', 'Address of the contract to upgrade')
     .addOptionalParam('params', 'JSON params to contract', '[]')
     .setAction(async (args, hre) => {
@@ -106,9 +126,11 @@ task('deploy', 'Deploys and upgrades contracts')
 
   if (args.address && args.upgradeable && args.contract) {
     console.log(`Upgrading ${args.contract} at: ${args.address}`);
+    if (args.ask) { await confirm('Continue? '); }
     await hre.upgrades.upgradeProxy(args.address, Contract);
   } else if (!args.address && args.contract) {
     console.log(`Deploying contract ${args.contract}`);
+    if (args.ask) { await confirm('Continue? '); }
     if (args.upgradeable) {
       contract = await hre.upgrades.deployProxy(Contract, params);
     } else {
@@ -125,10 +147,12 @@ task('deploy', 'Deploys and upgrades contracts')
     console.log(`${contractAddress} (impl) deployed to: ${implAddress}`);
     if (args.verify) {
       console.log(`Verifying contract at ${implAddress}`);
+      if (args.ask) { await confirm('Continue? '); }
       await hre.run('verify:verify', { address: implAddress });
     }
   } else if (args.verify) {
     console.log(`Verifying contract at ${contractAddress}`);
+    if (args.ask) { await confirm('Continue? '); }
     await hre.run('verify:verify', { address: contractAddress, constructorArguments: params });
   }
 
